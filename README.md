@@ -2,46 +2,65 @@
 
 ```mermaid
 graph TB
-    Client[Cliente]
-    APIGateway[API Gateway]
-    Eureka[Eureka Server]
-    
-    subgraph Microsserviços
-        CustomerService[Serviço de Cliente]
-        ProductService[Serviço de Produto]
-        OrderService[Serviço de Pedido]
-        ConsumerService[Serviço Consumidor]
+    subgraph "Camada de Cliente"
+        Client[Cliente]
     end
-    
-    subgraph Bancos de Dados
-        CustomerDB[(MySQL Cliente)]
-        ProductDB[(MySQL Produto)]
-        OrderDB[(MySQL Pedido)]
-    end
-    
-    Kafka[Apache Kafka]
-    
-    Client -->|Requisições| APIGateway
-    APIGateway -->|Roteamento| CustomerService
-    APIGateway -->|Roteamento| ProductService
-    APIGateway -->|Roteamento| OrderService
-    
-    CustomerService -->|Acesso| CustomerDB
-    ProductService -->|Acesso| ProductDB
-    OrderService -->|Acesso| OrderDB
-    
-    CustomerService -->|Publica Eventos| Kafka
-    ProductService -->|Publica Eventos| Kafka
-    OrderService -->|Publica Eventos| Kafka
-    Kafka -->|Consome Eventos| ConsumerService
-    
-    CustomerService -.->|Registro| Eureka
-    ProductService -.->|Registro| Eureka
-    OrderService -.->|Registro| Eureka
-    ConsumerService -.->|Registro| Eureka
-    APIGateway -.->|Consulta| Eureka
 
-    Eureka -.->|Fornece Informações| APIGateway
+    subgraph "Camada de Gateway"
+        APIGW["Gateway (Spring Cloud Gateway)"]
+    end
+
+    subgraph "Camada de Descoberta de Serviço"
+        Eureka[Eureka Server]
+    end
+
+    subgraph "Camada de Microsserviços"
+        MS1[Microsserviço <br>Cliente]
+        MS2[Microsserviço <br>Produto]
+        MS3[Microsserviço <br>Pedido]
+        MS4[Microsserviço <br>ConsumerService]
+    end
+
+    subgraph "Camada de Mensageria"
+        Kafka[Apache Kafka]
+    end
+
+    subgraph "Camada de Dados"
+        DB1[(MySQL<br>Cliente)]
+        DB2[(MySQL<br>Produto)]
+        DB3[(MySQL<br>Pedido)]
+    end
+
+    Client -->|HTTP/HTTPS| APIGW
+    APIGW -->|HTTP| MS1
+    APIGW -->|HTTP| MS2
+    APIGW -->|HTTP| MS3
+
+    MS1 -->|Registra| Eureka
+    MS2 -->|Registra| Eureka
+    MS3 -->|Registra| Eureka
+    MS4 -->|Registra| Eureka
+    APIGW -->|Consulta| Eureka
+
+    MS1 -->|Publica Eventos| Kafka
+    MS2 -->|Publica Eventos| Kafka
+    MS3 -->|Publica Eventos| Kafka
+    Kafka -->|Consome Eventos| MS4
+
+    MS1 -->|JDBC| DB1
+    MS2 -->|JDBC| DB2
+    MS3 -->|JDBC| DB3
+
+    classDef microservice fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef database fill:#bdf,stroke:#333,stroke-width:2px;
+    classDef gateway fill:#fdfd96,stroke:#333,stroke-width:2px;
+    classDef discovery fill:#90EE90,stroke:#333,stroke-width:2px;
+    classDef messaging fill:#FFA07A,stroke:#333,stroke-width:2px;
+    class MS1,MS2,MS3,MS4 microservice;
+    class DB1,DB2,DB3 database;
+    class APIGW gateway;
+    class Eureka discovery;
+    class Kafka messaging;
 ```
 
 - Executar o docker compose: docker-compose up
